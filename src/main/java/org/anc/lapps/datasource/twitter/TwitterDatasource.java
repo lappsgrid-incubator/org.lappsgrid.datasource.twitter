@@ -13,13 +13,9 @@ import twitter4j.Status;
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
 import twitter4j.TwitterFactory;
-import twitter4j.auth.AccessToken;
-import twitter4j.auth.OAuth2Token;
 import twitter4j.conf.Configuration;
 import twitter4j.conf.ConfigurationBuilder;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  *
@@ -88,22 +84,21 @@ public class TwitterDatasource implements DataSource
 			return generateError("Invalid discriminator.\nExpected " + Discriminators.Uri.GET + "\nFound " + discriminator);
 		}
 
-		String key = readProperty(KEY_PROPERTY);
-		if (key == null) {
-			return generateError("The Twitter Consumer Key property has not been set.");
-		}
-		String secret = readProperty(SECRET_PROPERTY);
-		if (secret == null)
-		{
-			return generateError("The Twitter Consumer Secret property has not been set.");
-		}
-//		System.setProperty("twitter4j.loggerFactory", "twitter4j.internal.logging.NullLoggerFactory");
+		// TODO Do away with the twitter4j.properties and get the key and secret from enviornment variables.
+//		String key = readProperty(KEY_PROPERTY);
+//		if (key == null) {
+//			return generateError("The Twitter Consumer Key property has not been set.");
+//		}
+//		String secret = readProperty(SECRET_PROPERTY);
+//		if (secret == null)
+//		{
+//			return generateError("The Twitter Consumer Secret property has not been set.");
+//		}
 		Configuration config = new ConfigurationBuilder()
 				.setApplicationOnlyAuthEnabled(true)
 				.setDebugEnabled(false)
 				.build();
 		Twitter twitter = new TwitterFactory(config).getInstance();
-		twitter.setOAuthConsumer(key, secret);
 		try
 		{
 			Query query = new Query(data.getPayload());
