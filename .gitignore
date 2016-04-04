@@ -11,3 +11,5 @@ buildNumber.properties
 *.iws
 *.ipr
 *.iml
+src/main/resources/twitter4j.properties
+VERSION
