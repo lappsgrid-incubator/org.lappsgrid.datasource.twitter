@@ -85,20 +85,21 @@ public class TwitterDatasource implements DataSource
 		}
 
 		// TODO Do away with the twitter4j.properties and get the key and secret from enviornment variables.
-//		String key = readProperty(KEY_PROPERTY);
-//		if (key == null) {
-//			return generateError("The Twitter Consumer Key property has not been set.");
-//		}
-//		String secret = readProperty(SECRET_PROPERTY);
-//		if (secret == null)
-//		{
-//			return generateError("The Twitter Consumer Secret property has not been set.");
-//		}
 		Configuration config = new ConfigurationBuilder()
 				.setApplicationOnlyAuthEnabled(true)
 				.setDebugEnabled(false)
 				.build();
 		Twitter twitter = new TwitterFactory(config).getInstance();
+		String key = readProperty(KEY_PROPERTY);
+		if (key == null) {
+			return generateError("The Twitter Consumer Key property has not been set.");
+		}
+		String secret = readProperty(SECRET_PROPERTY);
+		if (secret == null)
+		{
+			return generateError("The Twitter Consumer Secret property has not been set.");
+		}
+		twitter.setOAuthConsumer(key, secret);
 		try
 		{
 			Query query = new Query(data.getPayload());
