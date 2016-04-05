@@ -52,6 +52,7 @@ public class TwitterDatasourceTest
 	{
 		System.out.println("TwitterDatasourceTest.testExecute");
 		Data<String> data = new Data<>(Uri.GET, "Hillary Clinton");
+
 		String response = twitter.execute(data.asJson());
 		System.out.println(response);
 	}
