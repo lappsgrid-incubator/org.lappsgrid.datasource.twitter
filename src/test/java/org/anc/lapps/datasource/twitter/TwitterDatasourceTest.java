@@ -52,7 +52,11 @@ public class TwitterDatasourceTest
 	{
 		System.out.println("TwitterDatasourceTest.testExecute");
 		Data<String> data = new Data<>(Uri.GET, "Hillary Clinton");
-
+		// Number of tweets
+		data.setParameter("count", 50);
+		data.setParameter("type", "Recent");
+        data.setParameter("since", "2014-05-21");
+        data.setParameter("until", "2015-05-21");
 		String response = twitter.execute(data.asJson());
 		System.out.println(response);
 	}

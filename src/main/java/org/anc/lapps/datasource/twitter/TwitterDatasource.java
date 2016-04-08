@@ -5,6 +5,7 @@ import org.lappsgrid.discriminator.Discriminators;
 import org.lappsgrid.metadata.DataSourceMetadata;
 import org.lappsgrid.serialization.Data;
 import org.lappsgrid.serialization.Serializer;
+import org.lappsgrid.serialization.lif.Container;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.Query;
@@ -15,6 +16,10 @@ import twitter4j.TwitterException;
 import twitter4j.TwitterFactory;
 import twitter4j.conf.Configuration;
 import twitter4j.conf.ConfigurationBuilder;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 
 
 /**
@@ -84,7 +89,6 @@ public class TwitterDatasource implements DataSource
 			return generateError("Invalid discriminator.\nExpected " + Discriminators.Uri.GET + "\nFound " + discriminator);
 		}
 
-		// TODO Do away with the twitter4j.properties and get the key and secret from enviornment variables.
 		Configuration config = new ConfigurationBuilder()
 				.setApplicationOnlyAuthEnabled(true)
 				.setDebugEnabled(false)
@@ -103,12 +107,30 @@ public class TwitterDatasource implements DataSource
 		try
 		{
 			Query query = new Query(data.getPayload());
+            int numberOfTweets = (int) data.getParameter("count");
 			twitter.getOAuth2Token();
-			QueryResult result = twitter.search(query);
+			//QueryResult result = twitter.search(query);
+            if((String) data.getParameter("type") == "Popular")
+                query.setResultType(Query.POPULAR);
+            if((String) data.getParameter("type") == "Recent")
+                query.setResultType(Query.RECENT);
+            String untilString = (String) data.getParameter("until");
+            if(validateDateFormat(untilString))
+                query.setUntil(untilString);
+            String sinceString = (String) data.getParameter("since");
+            if(validateDateFormat(sinceString))
+                query.setSince(sinceString);
+            ArrayList<Status> tweets = getTweetsByCount(numberOfTweets, query, twitter);
+            StringBuilder builder = new StringBuilder();
 			// TODO Package tweets into a org.lappsgrid.serialization.Data object.
-			for (Status status : result.getTweets()) {
-				System.out.println(status.getUser().getScreenName() + " : " + status.getText());
-			}
+			for (Status status : tweets) {
+                String single = status.getCreatedAt() + " : " + status.getUser().getScreenName() + " : " + status.getText() + "\n";
+                builder.append(single);
+            }
+            Container container = new Container();
+            container.setText(builder.toString());
+			Data<Container> output = new Data<>(Discriminators.Uri.LAPPS, container);
+			return output.asPrettyJson();
 		}
 		catch (TwitterException e)
 		{
@@ -116,7 +138,7 @@ public class TwitterDatasource implements DataSource
 			//e.printStackTrace();
 			return generateError(e.getMessage());
 		}
-		return null;
+		// return null;
 	}
 
 	private String readProperty(String key)
@@ -135,4 +157,44 @@ public class TwitterDatasource implements DataSource
 		data.setPayload(message);
 		return data.asPrettyJson();
 	}
+
+    private ArrayList<Status> getTweetsByCount(int numberOfTweets, Query query, Twitter twitter) {
+        ArrayList<Status> tweets = new ArrayList<>();
+        if(!(numberOfTweets > 0)) {
+            // Default of 15 tweets
+            numberOfTweets = 15;
+        }
+        long lastID = Long.MAX_VALUE;
+        while(tweets.size() < numberOfTweets) {
+            if(numberOfTweets - tweets.size() > 100)
+                query.setCount(100);
+            else
+                query.setCount(numberOfTweets - tweets.size());
+                try {
+                    QueryResult result = twitter.search(query);
+                    tweets.addAll(result.getTweets());
+                    for(Status status : tweets)
+                        if(status.getId() < lastID)
+                            lastID = status.getId();
+                }
+
+                // TODO log this error
+                catch (TwitterException e) {
+                    // TODO handle this
+                    System.out.println("Failed in getTweetsByCount");
+                }
+        }
+        return tweets;
+    }
+
+    private boolean validateDateFormat(String input) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-mm-dd");
+        dateFormat.setLenient(false);
+        try {
+            dateFormat.parse(input.trim());
+        } catch (ParseException pe) {
+            return false;
+        }
+        return true;
+    }
 }
