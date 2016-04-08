@@ -23,7 +23,8 @@ import java.util.ArrayList;
 
 
 /**
- *
+ * @author Keith Suderman
+ * @author Alexandru Mahmoud
  */
 public class TwitterDatasource implements DataSource
 {
@@ -93,6 +94,8 @@ public class TwitterDatasource implements DataSource
 				.setApplicationOnlyAuthEnabled(true)
 				.setDebugEnabled(false)
 				.build();
+
+
 		Twitter twitter = new TwitterFactory(config).getInstance();
 		String key = readProperty(KEY_PROPERTY);
 		if (key == null) {
@@ -104,41 +107,70 @@ public class TwitterDatasource implements DataSource
 			return generateError("The Twitter Consumer Secret property has not been set.");
 		}
 		twitter.setOAuthConsumer(key, secret);
-		try
-		{
-			Query query = new Query(data.getPayload());
-            int numberOfTweets = (int) data.getParameter("count");
-			twitter.getOAuth2Token();
-			//QueryResult result = twitter.search(query);
-            if((String) data.getParameter("type") == "Popular")
-                query.setResultType(Query.POPULAR);
-            if((String) data.getParameter("type") == "Recent")
-                query.setResultType(Query.RECENT);
-            String untilString = (String) data.getParameter("until");
-            if(validateDateFormat(untilString))
-                query.setUntil(untilString);
-            String sinceString = (String) data.getParameter("since");
-            if(validateDateFormat(sinceString))
-                query.setSince(sinceString);
-            ArrayList<Status> tweets = getTweetsByCount(numberOfTweets, query, twitter);
-            StringBuilder builder = new StringBuilder();
-			// TODO Package tweets into a org.lappsgrid.serialization.Data object.
-			for (Status status : tweets) {
-                String single = status.getCreatedAt() + " : " + status.getUser().getScreenName() + " : " + status.getText() + "\n";
+        try {
+            twitter.getOAuth2Token();
+        } catch (TwitterException te) {
+            // DO SOMETHING WITH ERROR
+            System.out.println("PROBLEM");
+        }
+
+		//QueryResult result = twitter.search(query);
+
+        // Get query String from data payload
+        Query query = new Query(data.getPayload());
+
+        // Set the type to Popular or Recent if specified
+        // Results will be Mixed by default.
+        if(data.getParameter("type") == "Popular")
+            query.setResultType(Query.POPULAR);
+        if(data.getParameter("type") == "Recent")
+            query.setResultType(Query.RECENT);
+
+        // Initialize date strings
+        String untilString;
+        String sinceString;
+
+        // If either since or until dates are specified, extract them
+        try {
+            sinceString = (String) data.getParameter("since");
+        }
+        catch (NullPointerException npe) {
+            sinceString = "NOT SPECIFIED";
+        }
+        try {
+            untilString = (String) data.getParameter("until");
+        }
+        catch (NullPointerException npe) {
+            untilString = "NOT SPECIFIED";
+        }
+
+        // Verify the format of the date strings and set the parameters to query if correctly given
+        if(validateDateFormat(untilString))
+            query.setUntil(untilString);
+        if(validateDateFormat(sinceString))
+            query.setSince(sinceString);
+
+        // Get the number of tweets to be output
+        int numberOfTweets = (int) data.getParameter("count");
+
+        // Generate an ArrayList of the wanted number of tweets
+        // This is meant to avoid the 100 tweet limit set by twitter4j and extract as many tweets as needed
+        ArrayList<Status> tweets = getTweetsByCount(numberOfTweets, query, twitter);
+
+        // Initialize StringBuilder to hold the final string
+        StringBuilder builder = new StringBuilder();
+
+        // Append each Status (each tweet) to the initialized builder
+		for (Status status : tweets) {
+            String single = status.getCreatedAt() + " : " + status.getUser().getScreenName() + " : " + status.getText() + "\n";
                 builder.append(single);
-            }
-            Container container = new Container();
-            container.setText(builder.toString());
-			Data<Container> output = new Data<>(Discriminators.Uri.LAPPS, container);
-			return output.asPrettyJson();
-		}
-		catch (TwitterException e)
-		{
-			// TODO Log this error.
-			//e.printStackTrace();
-			return generateError(e.getMessage());
-		}
-		// return null;
+        }
+
+        // Output results
+        Container container = new Container();
+        container.setText(builder.toString());
+		Data<Container> output = new Data<>(Discriminators.Uri.LAPPS, container);
+		return output.asPrettyJson();
 	}
 
 	private String readProperty(String key)
@@ -158,35 +190,60 @@ public class TwitterDatasource implements DataSource
 		return data.asPrettyJson();
 	}
 
+    /** Contacts the Twitter API and gets any number of tweets corresponding to a certain query. The main
+     * purpose of this function is to avoid the limit of 100 tweets that can be extracted at once.
+     *
+     * @param numberOfTweets the number of tweets to be printed
+     * @param query the query to be searched by the twitter client
+     * @param twitter the twitter client
+     *
+     * @return a list containing the tweets corresponding to the query
+     */
     private ArrayList<Status> getTweetsByCount(int numberOfTweets, Query query, Twitter twitter) {
         ArrayList<Status> tweets = new ArrayList<>();
         if(!(numberOfTweets > 0)) {
             // Default of 15 tweets
             numberOfTweets = 15;
         }
+        // Set the last ID to the maximum possible value as a default
         long lastID = Long.MAX_VALUE;
-        while(tweets.size() < numberOfTweets) {
-            if(numberOfTweets - tweets.size() > 100)
-                query.setCount(100);
-            else
-                query.setCount(numberOfTweets - tweets.size());
-                try {
-                    QueryResult result = twitter.search(query);
-                    tweets.addAll(result.getTweets());
-                    for(Status status : tweets)
-                        if(status.getId() < lastID)
-                            lastID = status.getId();
-                }
 
-                // TODO log this error
-                catch (TwitterException e) {
-                    // TODO handle this
-                    System.out.println("Failed in getTweetsByCount");
-                }
+        try {
+            while (tweets.size() < numberOfTweets) {
+                // If there are still more than 100 tweets to be extracted, extract
+                // 100 during the next query, since 100 is the limit number of tweets
+                // that can be extracted at once
+                if (numberOfTweets - tweets.size() > 100)
+                    query.setCount(100);
+                else
+                    query.setCount(numberOfTweets - tweets.size());
+                // Extract tweets corresponding to the query then add them to the list
+                QueryResult result = twitter.search(query);
+                tweets.addAll(result.getTweets());
+
+                // Iterate through the list and get the lastID to know where to start from
+                // if there are more tweets to be extracted
+                for (Status status : tweets)
+                    if (status.getId() < lastID)
+                        lastID = status.getId();
+            }
+        }
+            // TODO log this error
+        catch (TwitterException e) {
+            // TODO handle this
+            System.out.println(e);
         }
         return tweets;
     }
 
+    /** Outputs whether the format of the input strings corresponds to the
+     * date format (YYYY-MM-DD) needed for the query.
+     *
+     * @param input A string representing the date
+     * @return a boolean corresponding to whether the input string has
+     * the format YYYY-MM-DD
+     *
+      */
     private boolean validateDateFormat(String input) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-mm-dd");
         dateFormat.setLenient(false);
