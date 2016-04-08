@@ -107,11 +107,14 @@ public class TwitterDatasource implements DataSource
 			return generateError("The Twitter Consumer Secret property has not been set.");
 		}
 		twitter.setOAuthConsumer(key, secret);
+
+
         try {
             twitter.getOAuth2Token();
         } catch (TwitterException te) {
-            // DO SOMETHING WITH ERROR
-            System.out.println("PROBLEM");
+            String errorData = generateError(te.getMessage());
+            logger.error(errorData);
+            return errorData;
         }
 
 		//QueryResult result = twitter.search(query);
@@ -127,22 +130,8 @@ public class TwitterDatasource implements DataSource
             query.setResultType(Query.RECENT);
 
         // Initialize date strings
-        String untilString;
-        String sinceString;
-
-        // If either since or until dates are specified, extract them
-        try {
-            sinceString = (String) data.getParameter("since");
-        }
-        catch (NullPointerException npe) {
-            sinceString = "NOT SPECIFIED";
-        }
-        try {
-            untilString = (String) data.getParameter("until");
-        }
-        catch (NullPointerException npe) {
-            untilString = "NOT SPECIFIED";
-        }
+        String sinceString = (String) data.getParameter("since");
+        String untilString = (String) data.getParameter("until");
 
         // Verify the format of the date strings and set the parameters to query if correctly given
         if(validateDateFormat(untilString))
@@ -150,12 +139,28 @@ public class TwitterDatasource implements DataSource
         if(validateDateFormat(sinceString))
             query.setSince(sinceString);
 
-        // Get the number of tweets to be output
-        int numberOfTweets = (int) data.getParameter("count");
+        int numberOfTweets;
 
-        // Generate an ArrayList of the wanted number of tweets
+        // Get the number of tweets from count parameter, and set it to default = 15 if not specified
+        try {
+            numberOfTweets = (int) data.getParameter("count");
+        }
+        catch(NullPointerException e) {
+            numberOfTweets = 15;
+        }
+
+        // Generate an ArrayList of the wanted number of tweets, and handle possible errors.
         // This is meant to avoid the 100 tweet limit set by twitter4j and extract as many tweets as needed
-        ArrayList<Status> tweets = getTweetsByCount(numberOfTweets, query, twitter);
+        ArrayList<Status> tweets;
+        String tweetsDataJson = getTweetsByCount(numberOfTweets, query, twitter);
+        String tweetsDataDisc = Serializer.parse(tweetsDataJson, Data.class).getDiscriminator();
+        if (Discriminators.Uri.ERROR.equals(tweetsDataDisc))
+            return tweetsDataJson;
+        else {
+            Data<ArrayList<Status>> tweetsData = Serializer.parse(tweetsDataJson, Data.class);
+            tweets = tweetsData.getPayload();
+        }
+
 
         // Initialize StringBuilder to hold the final string
         StringBuilder builder = new StringBuilder();
@@ -197,9 +202,10 @@ public class TwitterDatasource implements DataSource
      * @param query the query to be searched by the twitter client
      * @param twitter the twitter client
      *
-     * @return a list containing the tweets corresponding to the query
+     * @return A JSON string containing a Data object with either a list containing the tweets as a payload
+     * (when successful) or a String payload (for errors).
      */
-    private ArrayList<Status> getTweetsByCount(int numberOfTweets, Query query, Twitter twitter) {
+    private String getTweetsByCount(int numberOfTweets, Query query, Twitter twitter) {
         ArrayList<Status> tweets = new ArrayList<>();
         if(!(numberOfTweets > 0)) {
             // Default of 15 tweets
@@ -228,12 +234,27 @@ public class TwitterDatasource implements DataSource
                         lastID = status.getId();
             }
         }
-            // TODO log this error
-        catch (TwitterException e) {
-            // TODO handle this
-            System.out.println(e);
+        catch (TwitterException te) {
+            // Put the list of tweets in Data format then output as JSon String.
+            // Since we checked earlier for errors, we assume that an error occuring at this point due
+            // to Rate Limits is caused by a too high request. Thus, we output the retrieved tweets and log
+            // the error
+            String errorData = generateError(te.getMessage());
+            logger.error(errorData);
+            if(te.exceededRateLimitation()) {
+                Data<ArrayList<Status>> tweetsData = new Data<>();
+                tweetsData.setDiscriminator(Discriminators.Uri.LIST);
+                tweetsData.setPayload(tweets);
+                return tweetsData.asJson();
+            }
+            else
+                return errorData;
         }
-        return tweets;
+        // Put the list of tweets in Data format then output as JSon String.
+        Data<ArrayList<Status>> tweetsData = new Data<>();
+        tweetsData.setDiscriminator(Discriminators.Uri.LIST);
+        tweetsData.setPayload(tweets);
+        return tweetsData.asJson();
     }
 
     /** Outputs whether the format of the input strings corresponds to the
@@ -245,6 +266,8 @@ public class TwitterDatasource implements DataSource
      *
       */
     private boolean validateDateFormat(String input) {
+        if(input == null)
+            return false;
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-mm-dd");
         dateFormat.setLenient(false);
         try {
