@@ -60,6 +60,8 @@ public class TwitterDatasourceTest
         // Dates since and until
         data.setParameter("since", "2014-05-21");
         data.setParameter("until", "2015-05-21");
+		// Language
+		data.setParameter("lang", "fr");
 
 		String response = twitter.execute(data.asJson());
 		System.out.println(response);

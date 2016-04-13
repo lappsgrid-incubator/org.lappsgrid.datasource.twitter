@@ -129,9 +129,17 @@ public class TwitterDatasource implements DataSource
         if(data.getParameter("type") == "Recent")
             query.setResultType(Query.RECENT);
 
-        // Initialize date strings
+		// Get lang string
+		String langCode = (String) data.getParameter("lang");
+
+		// Verify the validity of the language code and add it to the query if it's valid
+		if(validateLangCode(langCode))
+			query.setLang(langCode);
+
+        // Get date strings
         String sinceString = (String) data.getParameter("since");
         String untilString = (String) data.getParameter("until");
+
 
         // Verify the format of the date strings and set the parameters to query if correctly given
         if(validateDateFormat(untilString))
@@ -277,4 +285,19 @@ public class TwitterDatasource implements DataSource
         }
         return true;
     }
+
+
+	/** Outputs whether the input is part of the list of valid ISO 639-1 codes
+	 * for specifying query language criteria
+	 *
+	 * @param input A string representing a language code
+	 * @return a boolean corresponding to whether the input string is valid
+     */
+	private boolean validateLangCode(String input) {
+		if(input == null)
+			return false;
+		// TODO check what codes twitter accepts (this is a list of all ISO 639-1 codes from Wikipedia)
+		String allcodes = "ab, aa, af, ak, sq, am, ar, an, hy, as, av, ae, ay, az, bm, ba, eu, be, bn, bh, bi, bs, br, bg, my, ca, ch, ce, ny, zh, cv, kw, co, cr, hr, cs, da, dv, nl, dz, en, eo, et, ee, fo, fj, fi, fr, ff, gl, ka, de, el, gn, gu, ht, ha, he, hz, hi, ho, hu, ia, id, ie, ga, ig, ik, io, is, it, iu, ja, jv, kl, kn, kr, ks, kk, km, ki, rw, ky, kv, kg, ko, ku, kj, la, lb, lg, li, ln, lo, lt, lu, lv, gv, mk, mg, ms, ml, mt, mi, mr, mh, mn, na, nv, nd, ne, ng, nb, nn, no, ii, nr, oc, oj, cu, om, or, os, pa, pi, fa, pl, ps, pt, qu, rm, rn, ro, ru, sa, sc, sd, se, sm, sg, sr, gd, sn, si, sk, sl, so, st, es, su, sw, ss, sv, ta, te, tg, th, ti, bo, tk, tl, tn, to, tr, ts, tt, tw, ty, ug, uk, ur, uz, ve, vi, vo, wa, cy, wo, fy, xh, yi, yo, za, zu";
+		return allcodes.contains(input);
+	}
 }
