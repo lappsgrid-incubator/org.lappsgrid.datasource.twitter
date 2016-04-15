@@ -106,20 +106,22 @@ public class TwitterDatasource implements DataSource
 		try
 		{
 			Query query = new Query(data.getPayload());
+			query.setLang("en");
 			twitter.getOAuth2Token();
 			QueryResult result = twitter.search(query);
 			Map<String, RateLimitStatus> map = twitter.getRateLimitStatus();
-			for (Map.Entry<String,RateLimitStatus> entry : map.entrySet()) {
-				RateLimitStatus status = entry.getValue();
-				System.out.println("Name     : " + entry.getKey());
+
+//			for (Map.Entry<String,RateLimitStatus> entry : map.entrySet()) {
+				RateLimitStatus status = map.get("/search/tweets");
+				System.out.println("Name     : /search/tweets");
 				System.out.println("Limit    : " + status.getLimit());
 				System.out.println("Remaining: " + status.getRemaining());
 				System.out.println("Reset in : " + status.getSecondsUntilReset());
 				System.out.println();
-			}
+//			}
 			// TODO Package tweets into a org.lappsgrid.serialization.Data object.
-			for (Status status : result.getTweets()) {
-				System.out.println(status.getUser().getScreenName() + " : " + status.getText());
+			for (Status s : result.getTweets()) {
+				System.out.println(s.getUser().getScreenName() + " : " + s.getText());
 			}
 		}
 		catch (TwitterException e)
