@@ -9,12 +9,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.Query;
 import twitter4j.QueryResult;
+import twitter4j.RateLimitStatus;
 import twitter4j.Status;
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
 import twitter4j.TwitterFactory;
 import twitter4j.conf.Configuration;
 import twitter4j.conf.ConfigurationBuilder;
+
+import java.util.Map;
 
 
 /**
@@ -105,6 +108,15 @@ public class TwitterDatasource implements DataSource
 			Query query = new Query(data.getPayload());
 			twitter.getOAuth2Token();
 			QueryResult result = twitter.search(query);
+			Map<String, RateLimitStatus> map = twitter.getRateLimitStatus();
+			for (Map.Entry<String,RateLimitStatus> entry : map.entrySet()) {
+				RateLimitStatus status = entry.getValue();
+				System.out.println("Name     : " + entry.getKey());
+				System.out.println("Limit    : " + status.getLimit());
+				System.out.println("Remaining: " + status.getRemaining());
+				System.out.println("Reset in : " + status.getSecondsUntilReset());
+				System.out.println();
+			}
 			// TODO Package tweets into a org.lappsgrid.serialization.Data object.
 			for (Status status : result.getTweets()) {
 				System.out.println(status.getUser().getScreenName() + " : " + status.getText());
