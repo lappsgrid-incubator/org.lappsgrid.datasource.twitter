@@ -238,7 +238,6 @@ public class TwitterDatasource implements DataSource
                     if (status.getId() < lastID)
                         lastID = status.getId();
 				query.setMaxId(lastID-1);
-
 				// Break the loop if the tweet count didn't change. This would prevent an infinite loop when
 				// tweets for the specified query are not available
                 if(tweets.size() == original)
@@ -306,14 +305,8 @@ public class TwitterDatasource implements DataSource
 	}
 
     private void printRemaining(Twitter twitter) throws TwitterException {
-		Map<String, RateLimitStatus> rateLimitStatus = twitter.getRateLimitStatus("users");
-		for (String endpoint : rateLimitStatus.keySet()) {
-			RateLimitStatus status = rateLimitStatus.get(endpoint);
-			System.out.println("Endpoint: " + endpoint);
-			System.out.println(" Limit: " + status.getLimit());
-			System.out.println(" Remaining: " + status.getRemaining());
-			System.out.println(" ResetTimeInSeconds: " + status.getResetTimeInSeconds());
-			System.out.println(" SecondsUntilReset: " + status.getSecondsUntilReset());
-		}
+        RateLimitStatus status = twitter.getRateLimitStatus().get("/search/tweets");
+            System.out.println("Still have " + status.getRemaining());
+
 	}
 }
