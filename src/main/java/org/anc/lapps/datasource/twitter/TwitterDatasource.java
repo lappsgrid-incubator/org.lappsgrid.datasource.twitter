@@ -157,18 +157,13 @@ public class TwitterDatasource implements DataSource
         // Generate an ArrayList of the wanted number of tweets, and handle possible errors.
         // This is meant to avoid the 100 tweet limit set by twitter4j and extract as many tweets as needed
         ArrayList<Status> allTweets = new ArrayList<>();
-        Object tweetsDataJson = getTweetsByCount(numberOfTweets, query, twitter);
-		Class type = tweetsDataJson.getClass();
-		if (type == String.class) {
-			String tweetsDataDisc = Serializer.parse((String) tweetsDataJson, Data.class).getDiscriminator();
-			if (Discriminators.Uri.ERROR.equals(tweetsDataDisc))
-				return (String) tweetsDataJson;
-		}
+        Data tweetsData = getTweetsByCount(numberOfTweets, query, twitter);
+		String tweetsDataDisc = tweetsData.getDiscriminator();
+		if (Discriminators.Uri.ERROR.equals(tweetsDataDisc))
+			return tweetsData.asPrettyJson();
 
         else {
-            //Data<ArrayList<Status>> tweetsData = Serializer.parse(tweetsDataJson, Data.class);
-			//allTweets = tweetsData.getPayload();
-			allTweets = (ArrayList<Status>) tweetsDataJson;
+			allTweets = (ArrayList<Status>) tweetsData.getPayload();
         }
 
 
@@ -215,7 +210,7 @@ public class TwitterDatasource implements DataSource
      * @return A JSON string containing a Data object with either a list containing the tweets as a payload
      * (when successful) or a String payload (for errors).
      */
-    private Object getTweetsByCount(int numberOfTweets, Query query, Twitter twitter) {
+    private Data getTweetsByCount(int numberOfTweets, Query query, Twitter twitter) {
         ArrayList<Status> tweets = new ArrayList<>();
         if(!(numberOfTweets > 0)) {
             // Default of 15 tweets
@@ -255,24 +250,23 @@ public class TwitterDatasource implements DataSource
             // Since we checked earlier for errors, we assume that an error occuring at this point due
             // to Rate Limits is caused by a too high request. Thus, we output the retrieved tweets and log
             // the error
-            String errorData = generateError(te.getMessage());
-            logger.error(errorData);
+            String errorDataJson = generateError(te.getMessage());
+            logger.error(errorDataJson);
             if(te.exceededRateLimitation() && tweets.size() > 0 ) {
-                //Data<ArrayList<Status>> tweetsData = new Data<>();
-                //tweetsData.setDiscriminator(Discriminators.Uri.LIST);
-                //tweetsData.setPayload(tweets);
-                //return tweetsData.asJson();
-				return tweets;
+                Data<ArrayList<Status>> tweetsData = new Data<>();
+                tweetsData.setDiscriminator(Discriminators.Uri.LIST);
+                tweetsData.setPayload(tweets);
+                return tweetsData;
             }
-            else
-                return errorData;
+            else {
+				return Serializer.parse(errorDataJson, Data.class);
+			}
         }
         // Put the list of tweets in Data format then output as JSon String.
-        //Data<ArrayList<Status>> tweetsData = new Data<>();
-        //tweetsData.setDiscriminator(Discriminators.Uri.LIST);
-        //tweetsData.setPayload(tweets);
-        //return tweetsData.asJson();
-		return tweets;
+        Data<ArrayList<Status>> tweetsData = new Data<>();
+        tweetsData.setDiscriminator(Discriminators.Uri.LIST);
+        tweetsData.setPayload(tweets);
+        return tweetsData;
     }
 
     /** Outputs whether the format of the input strings corresponds to the
