@@ -8,18 +8,15 @@ import org.lappsgrid.serialization.Serializer;
 import org.lappsgrid.serialization.lif.Container;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import twitter4j.Query;
-import twitter4j.QueryResult;
-import twitter4j.Status;
-import twitter4j.Twitter;
-import twitter4j.TwitterException;
-import twitter4j.TwitterFactory;
+import twitter4j.*;
 import twitter4j.conf.Configuration;
 import twitter4j.conf.ConfigurationBuilder;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.Set;
 
 
 /**
@@ -106,8 +103,8 @@ public class TwitterDatasource implements DataSource
 		{
 			return generateError("The Twitter Consumer Secret property has not been set.");
 		}
-		twitter.setOAuthConsumer(key, secret);
 
+		twitter.setOAuthConsumer(key, secret);
 
         try {
             twitter.getOAuth2Token();
@@ -159,14 +156,14 @@ public class TwitterDatasource implements DataSource
 
         // Generate an ArrayList of the wanted number of tweets, and handle possible errors.
         // This is meant to avoid the 100 tweet limit set by twitter4j and extract as many tweets as needed
-        ArrayList<Status> tweets;
+        ArrayList<Status> allTweets;
         String tweetsDataJson = getTweetsByCount(numberOfTweets, query, twitter);
         String tweetsDataDisc = Serializer.parse(tweetsDataJson, Data.class).getDiscriminator();
         if (Discriminators.Uri.ERROR.equals(tweetsDataDisc))
             return tweetsDataJson;
         else {
             Data<ArrayList<Status>> tweetsData = Serializer.parse(tweetsDataJson, Data.class);
-            tweets = tweetsData.getPayload();
+			allTweets = tweetsData.getPayload();
         }
 
 
@@ -174,7 +171,7 @@ public class TwitterDatasource implements DataSource
         StringBuilder builder = new StringBuilder();
 
         // Append each Status (each tweet) to the initialized builder
-		for (Status status : tweets) {
+		for (Status status : allTweets) {
             String single = status.getCreatedAt() + " : " + status.getUser().getScreenName() + " : " + status.getText() + "\n";
                 builder.append(single);
         }
@@ -221,8 +218,9 @@ public class TwitterDatasource implements DataSource
         }
         // Set the last ID to the maximum possible value as a default
         long lastID = Long.MAX_VALUE;
-
+        int original;
         try {
+            original = tweets.size();
             while (tweets.size() < numberOfTweets) {
                 // If there are still more than 100 tweets to be extracted, extract
                 // 100 during the next query, since 100 is the limit number of tweets
@@ -234,12 +232,17 @@ public class TwitterDatasource implements DataSource
                 // Extract tweets corresponding to the query then add them to the list
                 QueryResult result = twitter.search(query);
                 tweets.addAll(result.getTweets());
-
                 // Iterate through the list and get the lastID to know where to start from
                 // if there are more tweets to be extracted
                 for (Status status : tweets)
                     if (status.getId() < lastID)
                         lastID = status.getId();
+				query.setMaxId(lastID-1);
+
+				// Break the loop if the tweet count didn't change. This would prevent an infinite loop when
+				// tweets for the specified query are not available
+                if(tweets.size() == original)
+                    break;
             }
         }
         catch (TwitterException te) {
@@ -249,7 +252,7 @@ public class TwitterDatasource implements DataSource
             // the error
             String errorData = generateError(te.getMessage());
             logger.error(errorData);
-            if(te.exceededRateLimitation()) {
+            if(te.exceededRateLimitation() && tweets.size() > 0 ) {
                 Data<ArrayList<Status>> tweetsData = new Data<>();
                 tweetsData.setDiscriminator(Discriminators.Uri.LIST);
                 tweetsData.setPayload(tweets);
@@ -299,5 +302,17 @@ public class TwitterDatasource implements DataSource
 		// TODO check what codes twitter accepts (this is a list of all ISO 639-1 codes from Wikipedia)
 		String allcodes = "ab, aa, af, ak, sq, am, ar, an, hy, as, av, ae, ay, az, bm, ba, eu, be, bn, bh, bi, bs, br, bg, my, ca, ch, ce, ny, zh, cv, kw, co, cr, hr, cs, da, dv, nl, dz, en, eo, et, ee, fo, fj, fi, fr, ff, gl, ka, de, el, gn, gu, ht, ha, he, hz, hi, ho, hu, ia, id, ie, ga, ig, ik, io, is, it, iu, ja, jv, kl, kn, kr, ks, kk, km, ki, rw, ky, kv, kg, ko, ku, kj, la, lb, lg, li, ln, lo, lt, lu, lv, gv, mk, mg, ms, ml, mt, mi, mr, mh, mn, na, nv, nd, ne, ng, nb, nn, no, ii, nr, oc, oj, cu, om, or, os, pa, pi, fa, pl, ps, pt, qu, rm, rn, ro, ru, sa, sc, sd, se, sm, sg, sr, gd, sn, si, sk, sl, so, st, es, su, sw, ss, sv, ta, te, tg, th, ti, bo, tk, tl, tn, to, tr, ts, tt, tw, ty, ug, uk, ur, uz, ve, vi, vo, wa, cy, wo, fy, xh, yi, yo, za, zu";
 		return allcodes.contains(input);
+	}
+
+    private void printRemaining(Twitter twitter) throws TwitterException {
+		Map<String, RateLimitStatus> rateLimitStatus = twitter.getRateLimitStatus("users");
+		for (String endpoint : rateLimitStatus.keySet()) {
+			RateLimitStatus status = rateLimitStatus.get(endpoint);
+			System.out.println("Endpoint: " + endpoint);
+			System.out.println(" Limit: " + status.getLimit());
+			System.out.println(" Remaining: " + status.getRemaining());
+			System.out.println(" ResetTimeInSeconds: " + status.getResetTimeInSeconds());
+			System.out.println(" SecondsUntilReset: " + status.getSecondsUntilReset());
+		}
 	}
 }

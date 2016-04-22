@@ -56,12 +56,12 @@ public class TwitterDatasourceTest
 		// Number of tweets
         data.setParameter("count", 50);
         // Type (Recent or Popular)
-        data.setParameter("type", "Recent");
+      //  data.setParameter("type", "Recent");
         // Dates since and until
         data.setParameter("since", "2014-05-21");
-        data.setParameter("until", "2015-05-21");
+        data.setParameter("until", "2016-05-21");
 		// Language
-		data.setParameter("lang", "fr");
+		data.setParameter("lang", "en");
 
 		String response = twitter.execute(data.asJson());
 		System.out.println(response);
