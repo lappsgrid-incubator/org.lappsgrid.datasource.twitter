@@ -11,6 +11,7 @@
     <groupId>org.anc.lapps</groupId>
     <artifactId>twitter-datasource</artifactId>
     <version>1.0.0-SNAPSHOT</version>
+    <packaging>war</packaging>
     <name>Twitter Datasource</name>
     <description>Uses the Streaming API to provide tweets as a LAPPS data source.</description>
     <properties>
@@ -22,7 +23,7 @@
         <lapps.metadata.version>1.0.5</lapps.metadata.version>
     </properties>
     <build>
-        <finalName>GateServices#${project.version}</finalName>
+        <finalName>TwitterDatasource#${project.version}</finalName>
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -45,7 +46,7 @@
             <plugin>
                 <groupId>org.anc.maven.plugins</groupId>
                 <artifactId>anc-maven-plugin</artifactId>
-                <version>1.0.6</version>
+                <version>1.0.7</version>
                 <executions>
                     <execution>
                         <phase>generate-sources</phase>
