@@ -1,5 +1,8 @@
 package org.anc.lapps.datasource.twitter;
 
+import com.google.maps.GeoApiContext;
+import com.google.maps.GeocodingApi;
+import com.google.maps.model.GeocodingResult;
 import org.lappsgrid.api.DataSource;
 import org.lappsgrid.discriminator.Discriminators;
 import org.lappsgrid.metadata.DataSourceMetadata;
@@ -15,8 +18,6 @@ import twitter4j.conf.ConfigurationBuilder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.Set;
 
 
 /**
@@ -27,6 +28,7 @@ public class TwitterDatasource implements DataSource
 {
 	public static final String KEY_PROPERTY = "TWITTER_CONSUMER_KEY";
 	public static final String SECRET_PROPERTY = "TWITTER_CONSUMER_SECRET";
+	public static final String MAPS_KEY = "TWITTER_MAPS_KEY";
 
 	private String metadata;
 	private static final Logger logger = LoggerFactory.getLogger(TwitterDatasource.class);
@@ -143,6 +145,29 @@ public class TwitterDatasource implements DataSource
             query.setUntil(untilString);
         if(validateDateFormat(sinceString))
             query.setSince(sinceString);
+
+
+        // Get GeoLocation
+        if(data.getParameter("address") != null) {
+            String address = (String) data.getParameter("address");
+            double radius = (double) data.getParameter("radius");
+            Query.Unit unit = Query.MILES;
+            if(data.getParameter("unit") == "km")
+                unit = Query.KILOMETERS;
+            GeoLocation geoLocation;
+            try {
+                double[] coordinates = getGeocode(address);
+                geoLocation = new GeoLocation(coordinates[0], coordinates[1]);
+            }
+            catch(Exception e) {
+                String errorData = generateError(e.getMessage());
+                logger.error(errorData);
+                return errorData;
+            }
+
+            query.geoCode(geoLocation, radius, String.valueOf(unit));
+
+        }
 
         int numberOfTweets;
 
@@ -267,6 +292,17 @@ public class TwitterDatasource implements DataSource
         tweetsData.setPayload(tweets);
         return tweetsData;
     }
+
+	private double[] getGeocode(String address) throws Exception {
+		GeoApiContext context = new GeoApiContext().setApiKey(readProperty(MAPS_KEY));
+		GeocodingResult[] results = GeocodingApi.geocode(context, address).await();
+		double latitude  = results[0].geometry.location.lat;
+		double longitude = results[0].geometry.location.lng;
+		double[] coordinates = new double[2];
+		coordinates[0] = latitude;
+		coordinates [1] = longitude;
+		return coordinates;
+	}
 
     /** Outputs whether the format of the input strings corresponds to the
      * date format (YYYY-MM-DD) needed for the query.
