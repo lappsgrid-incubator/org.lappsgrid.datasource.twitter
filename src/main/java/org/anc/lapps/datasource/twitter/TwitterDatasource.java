@@ -116,8 +116,6 @@ public class TwitterDatasource implements DataSource
             return errorData;
         }
 
-		//QueryResult result = twitter.search(query);
-
         // Get query String from data payload
         Query query = new Query(data.getPayload());
 
@@ -169,9 +167,8 @@ public class TwitterDatasource implements DataSource
 
         }
 
-        int numberOfTweets;
-
         // Get the number of tweets from count parameter, and set it to default = 15 if not specified
+        int numberOfTweets;
         try {
             numberOfTweets = (int) data.getParameter("count");
         }
@@ -248,9 +245,8 @@ public class TwitterDatasource implements DataSource
             while (tweets.size() < numberOfTweets) {
                 // Keep number of original to avoid infinite looping when not getting enough tweets
                 original = tweets.size();
-                // If there are still more than 100 tweets to be extracted, extract
-                // 100 during the next query, since 100 is the limit number of tweets
-                // that can be extracted at once
+                // If there are more than 100 tweets left to be extracted, extract
+                // 100 during the next query, since 100 is the limit to retrieve at once
                 if (numberOfTweets - tweets.size() > 100)
                     query.setCount(100);
                 else

@@ -7,10 +7,6 @@ import org.lappsgrid.metadata.DataSourceMetadata;
 import org.lappsgrid.serialization.Data;
 import org.lappsgrid.serialization.Serializer;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import static org.lappsgrid.discriminator.Discriminators.Uri;
 
 import static org.junit.Assert.*;
