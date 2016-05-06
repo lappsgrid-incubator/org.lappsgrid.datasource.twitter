@@ -284,11 +284,22 @@ public class TwitterDatasource implements DataSource
 				return Serializer.parse(errorDataJson, Data.class);
 			}
         }
-        // Put the list of tweets in Data format then output as JSon String.
-        Data<ArrayList<Status>> tweetsData = new Data<>();
-        tweetsData.setDiscriminator(Discriminators.Uri.LIST);
-        tweetsData.setPayload(tweets);
-        return tweetsData;
+
+        // Return a special error message if no tweets are found
+        if(tweets.size() == 0) {
+            String noTweetsMessage = "No tweets found for the following query. " +
+                    "Note: Twitter's REST API only retrieves tweets from the past week.";
+            String errorDataJson = generateError(noTweetsMessage);
+            return Serializer.parse(errorDataJson, Data.class);
+        }
+
+        else {
+            // Put the list of tweets in Data format then output as JSon String.
+            Data<ArrayList<Status>> tweetsData = new Data<>();
+            tweetsData.setDiscriminator(Discriminators.Uri.LIST);
+            tweetsData.setPayload(tweets);
+            return tweetsData;
+        }
     }
 
 	private double[] getGeocode(String address) throws Exception {
