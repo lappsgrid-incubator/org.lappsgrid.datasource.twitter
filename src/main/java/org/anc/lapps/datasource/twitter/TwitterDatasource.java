@@ -181,7 +181,7 @@ public class TwitterDatasource implements DataSource
 
         // Generate an ArrayList of the wanted number of tweets, and handle possible errors.
         // This is meant to avoid the 100 tweet limit set by twitter4j and extract as many tweets as needed
-        ArrayList<Status> allTweets = new ArrayList<>();
+        ArrayList<Status> allTweets;
         Data tweetsData = getTweetsByCount(numberOfTweets, query, twitter);
 		String tweetsDataDisc = tweetsData.getDiscriminator();
 		if (Discriminators.Uri.ERROR.equals(tweetsDataDisc))
@@ -245,8 +245,9 @@ public class TwitterDatasource implements DataSource
         long lastID = Long.MAX_VALUE;
         int original;
         try {
-            original = tweets.size();
             while (tweets.size() < numberOfTweets) {
+                // Keep number of original to avoid infinite looping when not getting enough tweets
+                original = tweets.size();
                 // If there are still more than 100 tweets to be extracted, extract
                 // 100 during the next query, since 100 is the limit number of tweets
                 // that can be extracted at once
@@ -269,6 +270,7 @@ public class TwitterDatasource implements DataSource
                     break;
             }
         }
+
         catch (TwitterException te) {
             // Put the list of tweets in Data format then output as JSon String.
             // Since we checked earlier for errors, we assume that an error occuring at this point due
