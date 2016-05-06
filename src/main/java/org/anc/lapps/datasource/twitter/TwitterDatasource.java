@@ -220,8 +220,8 @@ public class TwitterDatasource implements DataSource
         long lastID = Long.MAX_VALUE;
         int original;
         try {
-            original = tweets.size();
             while (tweets.size() < numberOfTweets) {
+                original = tweets.size();
                 // If there are still more than 100 tweets to be extracted, extract
                 // 100 during the next query, since 100 is the limit number of tweets
                 // that can be extracted at once
