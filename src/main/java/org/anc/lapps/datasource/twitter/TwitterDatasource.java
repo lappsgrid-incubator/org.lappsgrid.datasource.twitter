@@ -148,7 +148,9 @@ public class TwitterDatasource implements DataSource
         // Get GeoLocation
         if(data.getParameter("address") != null) {
             String address = (String) data.getParameter("address");
-            double radius = (double) data.getParameter("radius");
+			double radius = (double) data.getParameter("radius");
+			if(radius <= 0)
+				radius = 10;
             Query.Unit unit = Query.MILES;
             if(data.getParameter("unit") == "km")
                 unit = Query.KILOMETERS;

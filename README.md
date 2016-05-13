@@ -12,6 +12,6 @@ Takes a Data<String> object with a Uri.GET ("http://vocab.lappsgrid.org/ns/actio
 - `since` : date since which tweets should be retrieved. Format: YYYY-MM-DD
 - `until` : date until which tweets should be retrieved. Format: YYYY-MM-DD
 - `lang` : language of tweets to be retrieved.
-- `address` : address around which to receive tweets. This parameter has to be accompanied by a radius.
+- `address` : address around which to receive tweets. This parameter has to be accompanied by a radius and a unit.
 - `radius` : value of radius around address. Default = 10
 - `unit` : unit of radius around address. Options are "km" (kilometers) or "mi" (miles). Default = "mi"
