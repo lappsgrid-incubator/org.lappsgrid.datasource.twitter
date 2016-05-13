@@ -15,8 +15,6 @@ import twitter4j.conf.ConfigurationBuilder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.Set;
 
 
 /**
