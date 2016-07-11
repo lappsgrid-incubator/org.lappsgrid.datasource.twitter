@@ -66,7 +66,7 @@ public class TwitterDatasource implements DataSource
 	 * and return a {@code Data} object with a {@code org.lappsgrid.serialization.lif.Container}
 	 * payload.
 	 * <p>
-	 * Errors and exceptions the occur during processing should be wrapped in a {@code Data}
+	 * Errors and exceptions that occur during processing should be wrapped in a {@code Data}
 	 * object with the discriminator set to http://vocab.lappsgrid.org/ns/error
 	 * <p>
 	 * See <a href="https://lapp.github.io/org.lappsgrid.serialization/index.html?org/lappsgrid/serialization/Data.html>org.lappsgrid.serialization.Data</a><br />
