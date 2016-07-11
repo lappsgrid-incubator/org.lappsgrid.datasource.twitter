@@ -58,6 +58,10 @@ public class TwitterDatasourceTest
         data.setParameter("until", "2016-05-21");
 		// Language
 		data.setParameter("lang", "en");
+		// GeoLocation
+		data.setParameter("address", "Poughkeepsie, NY, 12604");
+		data.setParameter("radius", 10.00);
+		data.setParameter("unit", "km");
 
 		String response = twitter.execute(data.asJson());
 		System.out.println(response);

@@ -1,5 +1,8 @@
 package org.anc.lapps.datasource.twitter;
 
+import com.google.maps.GeoApiContext;
+import com.google.maps.GeocodingApi;
+import com.google.maps.model.GeocodingResult;
 import org.lappsgrid.api.DataSource;
 import org.lappsgrid.discriminator.Discriminators;
 import org.lappsgrid.metadata.DataSourceMetadata;
@@ -25,6 +28,7 @@ public class TwitterDatasource implements DataSource
 {
 	public static final String KEY_PROPERTY = "TWITTER_CONSUMER_KEY";
 	public static final String SECRET_PROPERTY = "TWITTER_CONSUMER_SECRET";
+	public static final String MAPS_KEY = "TWITTER_MAPS_KEY";
 
 	private String metadata;
 	private static final Logger logger = LoggerFactory.getLogger(TwitterDatasource.class);
@@ -62,7 +66,7 @@ public class TwitterDatasource implements DataSource
 	 * and return a {@code Data} object with a {@code org.lappsgrid.serialization.lif.Container}
 	 * payload.
 	 * <p>
-	 * Errors and exceptions the occur during processing should be wrapped in a {@code Data}
+	 * Errors and exceptions that occur during processing should be wrapped in a {@code Data}
 	 * object with the discriminator set to http://vocab.lappsgrid.org/ns/error
 	 * <p>
 	 * See <a href="https://lapp.github.io/org.lappsgrid.serialization/index.html?org/lappsgrid/serialization/Data.html>org.lappsgrid.serialization.Data</a><br />
@@ -113,8 +117,6 @@ public class TwitterDatasource implements DataSource
             return errorData;
         }
 
-		//QueryResult result = twitter.search(query);
-
         // Get query String from data payload
         Query query = new Query(data.getPayload());
 
@@ -143,9 +145,33 @@ public class TwitterDatasource implements DataSource
         if(validateDateFormat(sinceString))
             query.setSince(sinceString);
 
-        int numberOfTweets;
+
+        // Get GeoLocation
+        if(data.getParameter("address") != null) {
+            String address = (String) data.getParameter("address");
+			double radius = (double) data.getParameter("radius");
+			if(radius <= 0)
+				radius = 10;
+            Query.Unit unit = Query.MILES;
+            if(data.getParameter("unit") == "km")
+                unit = Query.KILOMETERS;
+            GeoLocation geoLocation;
+            try {
+                double[] coordinates = getGeocode(address);
+                geoLocation = new GeoLocation(coordinates[0], coordinates[1]);
+            }
+            catch(Exception e) {
+                String errorData = generateError(e.getMessage());
+                logger.error(errorData);
+                return errorData;
+            }
+
+            query.geoCode(geoLocation, radius, String.valueOf(unit));
+
+        }
 
         // Get the number of tweets from count parameter, and set it to default = 15 if not specified
+        int numberOfTweets;
         try {
             numberOfTweets = (int) data.getParameter("count");
         }
@@ -155,7 +181,7 @@ public class TwitterDatasource implements DataSource
 
         // Generate an ArrayList of the wanted number of tweets, and handle possible errors.
         // This is meant to avoid the 100 tweet limit set by twitter4j and extract as many tweets as needed
-        ArrayList<Status> allTweets = new ArrayList<>();
+        ArrayList<Status> allTweets;
         Data tweetsData = getTweetsByCount(numberOfTweets, query, twitter);
 		String tweetsDataDisc = tweetsData.getDiscriminator();
 		if (Discriminators.Uri.ERROR.equals(tweetsDataDisc))
@@ -220,10 +246,11 @@ public class TwitterDatasource implements DataSource
         int original;
         try {
             while (tweets.size() < numberOfTweets) {
+
+                // Keep number of original to avoid infinite looping when not getting enough tweets
                 original = tweets.size();
-                // If there are still more than 100 tweets to be extracted, extract
-                // 100 during the next query, since 100 is the limit number of tweets
-                // that can be extracted at once
+                // If there are more than 100 tweets left to be extracted, extract
+                // 100 during the next query, since 100 is the limit to retrieve at once
                 if (numberOfTweets - tweets.size() > 100)
                     query.setCount(100);
                 else
@@ -243,6 +270,7 @@ public class TwitterDatasource implements DataSource
                     break;
             }
         }
+
         catch (TwitterException te) {
             // Put the list of tweets in Data format then output as JSon String.
             // Since we checked earlier for errors, we assume that an error occuring at this point due
@@ -277,6 +305,17 @@ public class TwitterDatasource implements DataSource
             return tweetsData;
         }
     }
+
+	private double[] getGeocode(String address) throws Exception {
+		GeoApiContext context = new GeoApiContext().setApiKey(readProperty(MAPS_KEY));
+		GeocodingResult[] results = GeocodingApi.geocode(context, address).await();
+		double latitude  = results[0].geometry.location.lat;
+		double longitude = results[0].geometry.location.lng;
+		double[] coordinates = new double[2];
+		coordinates[0] = latitude;
+		coordinates [1] = longitude;
+		return coordinates;
+	}
 
     /** Outputs whether the format of the input strings corresponds to the
      * date format (YYYY-MM-DD) needed for the query.
