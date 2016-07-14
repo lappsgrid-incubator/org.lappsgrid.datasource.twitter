@@ -6,7 +6,7 @@ Twitter Datasource
 Takes a Data<String> object with a Uri.GET ("http://vocab.lappsgrid.org/ns/action/get") discriminator and a string payload representing the search string for the query. Optional parameters are listed below.
 
 # Query operators
-(This is from the Twitter API help page ("https://dev.twitter.com/rest/public/search")
+This is from the Twitter API help page ("https://dev.twitter.com/rest/public/search")
 
 The query can have operators that modify its behavior, the available operators are:
 
