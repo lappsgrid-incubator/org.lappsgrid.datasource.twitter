@@ -16,11 +16,11 @@
     <description>Uses the Streaming API to provide tweets as a LAPPS data source.</description>
     <properties>
         <lapps.api.version>2.0.1</lapps.api.version>
-        <lapps.serialization.version>2.2.0</lapps.serialization.version>
-        <lapps.vocabulary.version>2.2.0</lapps.vocabulary.version>
-        <lapps.discriminator.version>2.2.1</lapps.discriminator.version>
-        <lapps.annotations.version>1.0.3</lapps.annotations.version>
-        <lapps.metadata.version>1.0.5</lapps.metadata.version>
+        <lapps.serialization.version>2.3.1</lapps.serialization.version>
+        <lapps.vocabulary.version>2.3.0</lapps.vocabulary.version>
+        <lapps.discriminator.version>2.3.0</lapps.discriminator.version>
+        <lapps.annotations.version>1.1.0</lapps.annotations.version>
+        <lapps.metadata.version>1.1.0</lapps.metadata.version>
     </properties>
     <build>
         <finalName>TwitterDatasource#${project.version}</finalName>

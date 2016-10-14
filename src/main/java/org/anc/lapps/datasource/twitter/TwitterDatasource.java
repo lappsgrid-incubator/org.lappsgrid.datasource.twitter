@@ -98,7 +98,7 @@ public class TwitterDatasource implements DataSource
 		if (key == null) {
 			return generateError("The Twitter Consumer Key property has not been set.");
 		}
-		
+
 		String secret = readProperty(SECRET_PROPERTY);
 		if (secret == null)
 		{
