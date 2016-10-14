@@ -11,7 +11,6 @@
     <groupId>org.anc.lapps</groupId>
     <artifactId>twitter-datasource</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-    <packaging>war</packaging>
     <name>Twitter Datasource</name>
     <description>Uses the Streaming API to provide tweets as a LAPPS data source.</description>
     <properties>
@@ -23,7 +22,7 @@
         <lapps.metadata.version>1.1.0</lapps.metadata.version>
     </properties>
     <build>
-        <finalName>TwitterDatasource#${project.version}</finalName>
+        <finalName>GateServices#${project.version}</finalName>
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -46,7 +45,7 @@
             <plugin>
                 <groupId>org.anc.maven.plugins</groupId>
                 <artifactId>anc-maven-plugin</artifactId>
-                <version>1.0.7</version>
+                <version>1.0.6</version>
                 <executions>
                     <execution>
                         <phase>generate-sources</phase>
@@ -63,6 +62,11 @@
         </plugins>
     </build>
     <dependencies>
+        <dependency>
+            <groupId>com.google.maps</groupId>
+            <artifactId>google-maps-services</artifactId>
+            <version>0.1.12</version>
+        </dependency>
         <dependency>
             <groupId>org.twitter4j</groupId>
             <artifactId>twitter4j-core</artifactId>

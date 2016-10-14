@@ -7,10 +7,6 @@ import org.lappsgrid.metadata.DataSourceMetadata;
 import org.lappsgrid.serialization.Data;
 import org.lappsgrid.serialization.Serializer;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import static org.lappsgrid.discriminator.Discriminators.Uri;
 
 import static org.junit.Assert.*;
@@ -56,12 +52,16 @@ public class TwitterDatasourceTest
 		// Number of tweets
         data.setParameter("count", 50);
         // Type (Recent or Popular)
-      //  data.setParameter("type", "Recent");
+        data.setParameter("type", "Recent");
         // Dates since and until
         data.setParameter("since", "2014-05-21");
         data.setParameter("until", "2016-05-21");
 		// Language
 		data.setParameter("lang", "en");
+		// GeoLocation
+		data.setParameter("address", "Poughkeepsie, NY, 12604");
+		data.setParameter("radius", 10.00);
+		data.setParameter("unit", "km");
 
 		String response = twitter.execute(data.asJson());
 		System.out.println(response);
