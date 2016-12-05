@@ -44,30 +44,6 @@ public class TwitterDatasourceTest
 	}
 
 	@Test
-	public void testExecute()
-	{
-		System.out.println("TwitterDatasourceTest.testExecute");
-		Data<String> data = new Data<>(Uri.GET, "Hillary Clinton");
-
-		// Number of tweets
-        data.setParameter("count", 50);
-        // Type (Recent or Popular)
-        data.setParameter("type", "Recent");
-        // Dates since and until
-        data.setParameter("since", "2014-05-21");
-        data.setParameter("until", "2016-05-21");
-		// Language
-		data.setParameter("lang", "en");
-		// GeoLocation
-		data.setParameter("address", "Poughkeepsie, NY, 12604");
-		data.setParameter("radius", 10.00);
-		data.setParameter("unit", "km");
-
-		String response = twitter.execute(data.asJson());
-		System.out.println(response);
-	}
-
-	@Test
 	public void testErrorInput()
 	{
 		System.out.println("TwitterDatasourceTest.testErrorInput");
@@ -90,6 +66,30 @@ public class TwitterDatasourceTest
 		data = Serializer.parse(json, Data.class);
 		assertEquals("Invalid discriminator returned: " + data.getDiscriminator(), Uri.ERROR, data.getDiscriminator());
 		System.out.println(data.getPayload());
+	}
+
+	@Test
+	public void testExecute()
+	{
+		System.out.println("TwitterDatasourceTest.testExecute");
+		Data<String> data = new Data<>(Uri.GET, "Hillary Clinton");
+
+		// Number of tweets
+		data.setParameter("count", 50);
+		// Type (Recent or Popular)
+		data.setParameter("type", "Recent");
+		// Dates since and until
+		data.setParameter("since", "2014-05-21");
+		data.setParameter("until", "2016-05-21");
+		// Language
+		data.setParameter("lang", "en");
+		// GeoLocation
+		data.setParameter("address", "Poughkeepsie, NY, 12604");
+		data.setParameter("radius", 10.00);
+		data.setParameter("unit", "km");
+
+		String response = twitter.execute(data.asJson());
+		System.out.println(response);
 	}
 
 	private void expect(String expected, String actual)

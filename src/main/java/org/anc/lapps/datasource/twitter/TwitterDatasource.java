@@ -38,6 +38,7 @@ public class TwitterDatasource implements DataSource
 		DataSourceMetadata md = new DataSourceMetadata();
 		md.setEncoding("UTF-8");
 		md.setName("Twitter Datasource");
+		md.setDescription("Extracts tweets based on query from Twitter's REST API.");
 		md.setLicense(Discriminators.Uri.APACHE2);
 		md.setVendor("http://www.anc.org");
 		md.setVersion(Version.getVersion());
@@ -80,10 +81,14 @@ public class TwitterDatasource implements DataSource
 	{
 		Data<String> data = Serializer.parse(input, Data.class);
 		String discriminator = data.getDiscriminator();
+
+		// Return ERRORS back
 		if (Discriminators.Uri.ERROR.equals(discriminator))
 		{
 			return input;
 		}
+
+		// Generate an error if the used discriminator is wrong
 		if (!Discriminators.Uri.GET.equals(discriminator))
 		{
 			return generateError("Invalid discriminator.\nExpected " + Discriminators.Uri.GET + "\nFound " + discriminator);
@@ -94,13 +99,13 @@ public class TwitterDatasource implements DataSource
 				.setDebugEnabled(false)
 				.build();
 
-
+		// Authentication using saved keys
 		Twitter twitter = new TwitterFactory(config).getInstance();
 		String key = readProperty(KEY_PROPERTY);
 		if (key == null) {
 			return generateError("The Twitter Consumer Key property has not been set.");
 		}
-		
+
 		String secret = readProperty(SECRET_PROPERTY);
 		if (secret == null)
 		{
