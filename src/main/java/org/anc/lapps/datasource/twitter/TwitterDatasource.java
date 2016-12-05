@@ -311,7 +311,13 @@ public class TwitterDatasource implements DataSource
         }
     }
 
-	private double[] getGeocode(String address) throws Exception {
+	/** Uses google maps API to get coordinates corresponding to the given address.
+	 *
+	 * @param address A string representing a street address
+	 * @return An array of doubles, representing the latitude and longitude of the address
+	 * @throws Exception The exception thrown by the Geocoding method from Google Maps API
+	 */
+	public double[] getGeocode(String address) throws Exception {
 		GeoApiContext context = new GeoApiContext().setApiKey(readProperty(MAPS_KEY));
 		GeocodingResult[] results = GeocodingApi.geocode(context, address).await();
 		double latitude  = results[0].geometry.location.lat;
@@ -330,7 +336,7 @@ public class TwitterDatasource implements DataSource
      * the format YYYY-MM-DD
      *
       */
-    private boolean validateDateFormat(String input) {
+    public boolean validateDateFormat(String input) {
         if(input == null)
             return false;
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-mm-dd");
@@ -350,16 +356,10 @@ public class TwitterDatasource implements DataSource
 	 * @param input A string representing a language code
 	 * @return a boolean corresponding to whether the input string is valid
      */
-	private boolean validateLangCode(String input) {
+	public boolean validateLangCode(String input) {
 		if(input == null)
 			return false;
 		String allcodes = "ab, aa, af, ak, sq, am, ar, an, hy, as, av, ae, ay, az, bm, ba, eu, be, bn, bh, bi, bs, br, bg, my, ca, ch, ce, ny, zh, cv, kw, co, cr, hr, cs, da, dv, nl, dz, en, eo, et, ee, fo, fj, fi, fr, ff, gl, ka, de, el, gn, gu, ht, ha, he, hz, hi, ho, hu, ia, id, ie, ga, ig, ik, io, is, it, iu, ja, jv, kl, kn, kr, ks, kk, km, ki, rw, ky, kv, kg, ko, ku, kj, la, lb, lg, li, ln, lo, lt, lu, lv, gv, mk, mg, ms, ml, mt, mi, mr, mh, mn, na, nv, nd, ne, ng, nb, nn, no, ii, nr, oc, oj, cu, om, or, os, pa, pi, fa, pl, ps, pt, qu, rm, rn, ro, ru, sa, sc, sd, se, sm, sg, sr, gd, sn, si, sk, sl, so, st, es, su, sw, ss, sv, ta, te, tg, th, ti, bo, tk, tl, tn, to, tr, ts, tt, tw, ty, ug, uk, ur, uz, ve, vi, vo, wa, cy, wo, fy, xh, yi, yo, za, zu";
 		return allcodes.contains(input);
-	}
-
-    private void printRemaining(Twitter twitter) throws TwitterException {
-        RateLimitStatus status = twitter.getRateLimitStatus().get("/search/tweets");
-            System.out.println("Still have " + status.getRemaining());
-
 	}
 }

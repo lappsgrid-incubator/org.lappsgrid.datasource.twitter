@@ -13,6 +13,7 @@ import static org.junit.Assert.*;
 
 /**
  * @author Keith Suderman
+ * @author Alexandru Mahmoud
  */
 public class TwitterDatasourceTest
 {
@@ -80,12 +81,12 @@ public class TwitterDatasourceTest
 		data.setParameter("type", "Recent");
 		// Dates since and until
 		data.setParameter("since", "2014-05-21");
-		data.setParameter("until", "2016-05-21");
+		data.setParameter("until", "2020-05-21");
 		// Language
 		data.setParameter("lang", "en");
 		// GeoLocation
 		data.setParameter("address", "Poughkeepsie, NY, 12604");
-		data.setParameter("radius", 10.00);
+		data.setParameter("radius", 50.00);
 		data.setParameter("unit", "km");
 
 		String response = twitter.execute(data.asJson());
